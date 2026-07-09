@@ -1,1 +1,6 @@
 /build
+.backup/
+local.properties
+*.iml
+.idea/
+build/

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 暖木色主题 -->
+    <color name="colorPrimary">#8B4513</color>
+    <color name="colorPrimaryDark">#5D2E0C</color>
+    <color name="colorAccent">#C62828</color>
+    <color name="bgMenu">#F5E6D3</color>
+    <color name="btnGold">#C8A45C</color>
+    <color name="textDark">#3E2723</color>
+</resources>

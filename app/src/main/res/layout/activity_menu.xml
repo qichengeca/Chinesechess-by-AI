@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/bgMenu"
+    android:padding="32dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="中 国 象 棋"
+        android:textSize="36sp"
+        android:textColor="@color/colorPrimaryDark"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <View
+        android:layout_width="80dp"
+        android:layout_height="2dp"
+        android:background="@color/btnGold"
+        android:layout_marginBottom="48dp"/>
+
+    <!-- 单人游戏 -->
+    <TextView
+        android:id="@+id/btn_single"
+        android:layout_width="240dp"
+        android:layout_height="56dp"
+        android:gravity="center"
+        android:text="单 人 游 戏"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:background="@drawable/btn_menu_bg"
+        android:layout_marginBottom="20dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+    <!-- 单机双人 -->
+    <TextView
+        android:id="@+id/btn_two_player"
+        android:layout_width="240dp"
+        android:layout_height="56dp"
+        android:gravity="center"
+        android:text="单 机 双 人"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:background="@drawable/btn_menu_bg"
+        android:layout_marginBottom="20dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+    <!-- 局域网对战 -->
+    <TextView
+        android:id="@+id/btn_lan"
+        android:layout_width="240dp"
+        android:layout_height="56dp"
+        android:gravity="center"
+        android:text="局 域 网 对 战"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:background="@drawable/btn_menu_bg"
+        android:clickable="true"
+        android:focusable="true"/>
+
+</LinearLayout>

@@ -66,6 +66,22 @@ public class BoardView extends View {
     // 随机数(噪声/延迟)
     private final Random random = new Random();
 
+    // 动画系统
+    private static final int ANIM_NONE = 0;
+    private static final int ANIM_SELECTED = 1;  // 棋子被提起
+    private static final int ANIM_MOVING = 2;    // 棋子移动中
+    private int animState = ANIM_NONE;
+    private float animScale = 1.0f;
+    private int animSrcR = -1, animSrcC = -1, animDstR = -1, animDstC = -1;
+    private ChessGame.Move pendingAnimMove;
+    private int animStep = 0;
+    private static final int ANIM_STEPS = 6;
+    private static final int ANIM_STEP_MS = 25;
+
+    private final Runnable animRunnable = new Runnable() {
+        @Override public void run() { animTick(); }
+    };
+
     // 回调
     private OnGameListener listener;
 
@@ -73,6 +89,7 @@ public class BoardView extends View {
         void onStatusChanged(String status);
         void onGameOver(String result);
         void onSendMove(ChessGame.Move move);
+        void onRematchRequested();
     }
 
     public BoardView(Context context, AttributeSet attrs) {
@@ -88,6 +105,7 @@ public class BoardView extends View {
     }
 
     public ChessGame getGame() { return game; }
+    public int getMyColor() { return myColor; }
 
     public void setOnGameListener(OnGameListener l) { this.listener = l; }
 
@@ -99,9 +117,23 @@ public class BoardView extends View {
         validMoves = null;
         gameOver = false;
         isBotThinking = false;
-        statusText = "红方走棋";
+        statusText = (myColor == ChessGame.RED) ? "红方走棋" : "黑方走棋";
         if (listener != null) listener.onStatusChanged(statusText);
         invalidate();
+    }
+
+    /** 再来一局 */
+    public void restartGame() {
+        newGame();
+        // 单人模式: Bot先手则立即走
+        if (!isLanMode && !isLocalPvP && bot != null && myColor == ChessGame.BLACK) {
+            isBotThinking = true;
+            statusText = "红方思考中...";
+            if (listener != null) listener.onStatusChanged(statusText);
+            handler.postDelayed(new Runnable() {
+                @Override public void run() { botMove(); }
+            }, 400);
+        }
     }
 
     /** 设置AI搜索深度 */
@@ -109,27 +141,39 @@ public class BoardView extends View {
         bot.setSearchDepth(depth);
     }
 
-    /** 初始化单人模式 — 设置难度 + 噪声因子 */
-    public void initSinglePlayer(int botDepth) {
+    /** 初始化单人模式 */
+    public void initSinglePlayer(int botDepth, int playerColor) {
         this.isLanMode = false;
-        this.myColor = ChessGame.RED;
+        this.isLocalPvP = false;
+        this.myColor = playerColor;
+        int botColor = -playerColor;
+        bot = new ChessBot(game, botColor);
         bot.setSearchDepth(botDepth);
-        // 噪声因子: 深度越浅越随机 → 更像人
         float nf;
         if (botDepth <= 2) nf = 0.7f;
         else if (botDepth == 3) nf = 0.3f;
         else if (botDepth == 4) nf = 0.1f;
         else nf = 0.0f;
         bot.setNoiseFactor(nf);
+        bot.setLearningEnabled(botDepth >= 3);
         newGame();
+        // 玩家选黑 → Bot先走
+        if (playerColor == ChessGame.BLACK) {
+            isBotThinking = true;
+            statusText = "红方思考中...";
+            if (listener != null) listener.onStatusChanged(statusText);
+            handler.postDelayed(new Runnable() {
+                @Override public void run() { botMove(); }
+            }, 500);
+        }
     }
 
     /** 初始化局域网模式 */
-    public void initLanMode(boolean isHost) {
+    public void initLanMode(boolean isHost, int playerColor) {
         this.isLanMode = true;
         this.isHost = isHost;
-        this.myColor = isHost ? ChessGame.RED : ChessGame.BLACK;
-        bot = null; // 局域网模式不用Bot
+        this.myColor = playerColor;
+        bot = null;
         newGame();
     }
 
@@ -155,7 +199,12 @@ public class BoardView extends View {
 
         if (game.isGameOver()) {
             gameOver = true;
-            String result = game.getCurrentPlayer() == ChessGame.RED ? "黑方胜!" : "红方胜!";
+            String result;
+            if (game.isKingCaptured()) {
+                result = game.getCurrentPlayer() == ChessGame.RED ? "黑方吃将胜!" : "红方吃将胜!";
+            } else {
+                result = game.getCurrentPlayer() == ChessGame.RED ? "黑方胜!" : "红方胜!";
+            }
             statusText = result;
             if (listener != null) {
                 listener.onStatusChanged(statusText);
@@ -270,58 +319,69 @@ public class BoardView extends View {
     }
 
     private void drawPieces(Canvas canvas) {
-        Paint bgPaint = new Paint();
-        bgPaint.setAntiAlias(true);
-        bgPaint.setStyle(Paint.Style.FILL);
-
-        Paint borderPaint = new Paint();
-        borderPaint.setAntiAlias(true);
-        borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(2.5f);
-
-        Paint textPaint = new Paint();
-        textPaint.setAntiAlias(true);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTypeface(Typeface.DEFAULT_BOLD);
-        textPaint.setTextSize(pieceRadius * 1.1f);
-
         int[][] board = game.getBoard();
         for (int r = 0; r < ChessGame.ROWS; r++) {
             for (int c = 0; c < ChessGame.COLS; c++) {
                 int piece = board[r][c];
                 if (piece == ChessGame.EMPTY) continue;
-
-                float cx = boardLeft + c * cellWidth;
-                float cy = boardTop + r * cellHeight;
+                // 动画中: 跳过被提起的源棋子
+                if (animState == ANIM_MOVING && r == animSrcR && c == animSrcC) continue;
 
                 boolean isRed = ChessGame.colorOf(piece) == ChessGame.RED;
-
-                // 棋子阴影
-                Paint shadowPaint = new Paint();
-                shadowPaint.setAntiAlias(true);
-                shadowPaint.setColor(0x40000000);
-                canvas.drawCircle(cx + 2f, cy + 2f, pieceRadius, shadowPaint);
-
-                // 棋子底色
-                bgPaint.setColor(COLOR_PIECE_BG);
-                canvas.drawCircle(cx, cy, pieceRadius, bgPaint);
-
-                // 棋子边框
-                borderPaint.setColor(isRed ? COLOR_RED_PIECE : COLOR_BLACK_PIECE);
-                canvas.drawCircle(cx, cy, pieceRadius, borderPaint);
-
-                // 内圈
-                borderPaint.setStrokeWidth(1f);
-                canvas.drawCircle(cx, cy, pieceRadius * 0.85f, borderPaint);
-
-                // 棋子文字
-                textPaint.setColor(isRed ? COLOR_RED_PIECE : COLOR_BLACK_PIECE);
-                String name = isRed ? RED_NAMES[ChessGame.typeOf(piece)]
-                                    : BLACK_NAMES[ChessGame.typeOf(piece)];
-                float textY = cy - (textPaint.descent() + textPaint.ascent()) / 2;
-                canvas.drawText(name, cx, textY, textPaint);
+                float cx = boardLeft + c * cellWidth;
+                float cy = boardTop + r * cellHeight;
+                float rScale = (animState == ANIM_SELECTED && r == selectedRow && c == selectedCol)
+                        ? animScale : 1.0f;
+                drawPieceAt(canvas, piece, isRed, cx, cy, rScale);
             }
         }
+
+        // 绘制动画中的移动棋子
+        if (animState == ANIM_MOVING && animSrcR >= 0) {
+            float progress = (float) animStep / ANIM_STEPS;
+            float cx = boardLeft + (animSrcC + (animDstC - animSrcC) * progress) * cellWidth;
+            float cy = boardTop + (animSrcR + (animDstR - animSrcR) * progress) * cellHeight;
+            int piece = game.getPiece(animSrcR, animSrcC);
+            boolean isRed = ChessGame.colorOf(piece) == ChessGame.RED;
+            drawPieceAt(canvas, piece != ChessGame.EMPTY ? piece : ChessGame.RED,
+                    isRed || piece == ChessGame.EMPTY, cx, cy, animScale);
+        }
+    }
+
+    private void drawPieceAt(Canvas canvas, int piece, boolean isRed, float cx, float cy, float scale) {
+        float r = pieceRadius * scale;
+        Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        borderPaint.setStyle(Paint.Style.STROKE);
+
+        // 阴影
+        Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shadowPaint.setColor(0x40000000);
+        canvas.drawCircle(cx + 3f, cy + 3f, r, shadowPaint);
+
+        // 底色
+        bgPaint.setColor(COLOR_PIECE_BG);
+        canvas.drawCircle(cx, cy, r, bgPaint);
+
+        // 外边框
+        borderPaint.setColor(isRed ? COLOR_RED_PIECE : COLOR_BLACK_PIECE);
+        borderPaint.setStrokeWidth(2.5f);
+        canvas.drawCircle(cx, cy, r, borderPaint);
+
+        // 内圈
+        borderPaint.setStrokeWidth(1f);
+        canvas.drawCircle(cx, cy, r * 0.85f, borderPaint);
+
+        // 文字
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        textPaint.setTextSize(r * 1.1f);
+        textPaint.setColor(isRed ? COLOR_RED_PIECE : COLOR_BLACK_PIECE);
+        String name = isRed ? RED_NAMES[ChessGame.typeOf(piece)]
+                            : BLACK_NAMES[ChessGame.typeOf(piece)];
+        float textY = cy - (textPaint.descent() + textPaint.ascent()) / 2;
+        canvas.drawText(name, cx, textY, textPaint);
     }
 
     private void drawHighlights(Canvas canvas) {
@@ -382,6 +442,7 @@ public class BoardView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getAction() != MotionEvent.ACTION_DOWN) return true;
         if (gameOver || isBotThinking) return true;
+        if (animState == ANIM_MOVING) return true; // 动画中不响应
         // 局域网模式: 只能操作己方回合
         if (isLanMode && game.getCurrentPlayer() != myColor) return true;
 
@@ -425,7 +486,14 @@ public class BoardView extends View {
             if (validMoves != null) {
                 for (ChessGame.Move m : validMoves) {
                     if (m.toRow == row && m.toCol == col) {
-                        executeMove(m);
+                        // 动画移动
+                        animDstR = m.toRow;
+                        animDstC = m.toCol;
+                        pendingAnimMove = m;
+                        animState = ANIM_MOVING;
+                        animScale = 1.20f;
+                        animStep = 0;
+                        animTick();
                         return;
                     }
                 }
@@ -435,6 +503,8 @@ public class BoardView extends View {
             selectedRow = -1;
             selectedCol = -1;
             validMoves = null;
+            animState = ANIM_NONE;
+            animScale = 1.0f;
             invalidate();
         } else {
             // 无选中, 选择己方棋子
@@ -448,15 +518,30 @@ public class BoardView extends View {
         selectedRow = row;
         selectedCol = col;
         validMoves = game.getValidMoves(row, col);
+        // 动画: 棋子提起
+        animState = ANIM_SELECTED;
+        animScale = 1.20f;
+        animSrcR = row;
+        animSrcC = col;
         invalidate();
     }
 
     private void executeMove(ChessGame.Move move) {
+        // 单人模式: 记录玩家走法
+        if (!isLanMode && !isLocalPvP && bot != null 
+                && game.getCurrentPlayer() == myColor) {
+            bot.recordPlayerMove(move);
+        }
+
         game.makeMove(move);
         selectedRow = -1;
         selectedCol = -1;
         validMoves = null;
         invalidate();
+
+        // 音效: 仅玩家走子
+        SoundManager sm = SoundManager.get();
+        if (sm != null && !isBotThinking) sm.playClick();
 
         // 局域网模式: 发送走法
         if (isLanMode && listener != null) {
@@ -466,29 +551,37 @@ public class BoardView extends View {
         // 检查游戏是否结束
         if (game.isGameOver()) {
             gameOver = true;
-            String result = game.getCurrentPlayer() == ChessGame.RED ? "黑方胜!" : "红方胜!";
+            String result;
+            if (game.isKingCaptured()) {
+                result = game.getCurrentPlayer() == ChessGame.RED ? "黑方吃将胜!" : "红方吃将胜!";
+            } else {
+                result = game.getCurrentPlayer() == ChessGame.RED ? "黑方胜!" : "红方胜!";
+            }
             statusText = result;
             if (listener != null) {
                 listener.onStatusChanged(statusText);
                 listener.onGameOver(result);
             }
+            if (!isLanMode && !isLocalPvP && bot != null) {
+                boolean playerWon = (game.getCurrentPlayer() != myColor);
+                bot.endGame(playerWon);
+            }
             showToast(result);
             return;
         }
 
-        // 单人模式: Bot走棋 (随机延迟模拟人味)
-        if (!isLanMode && !isLocalPvP && game.getCurrentPlayer() == ChessGame.BLACK) {
-            statusText = "黑方思考中...";
+        int botColor = -myColor;
+        // 单人模式: Bot走棋
+        if (!isLanMode && !isLocalPvP && game.getCurrentPlayer() == botColor) {
+            String thinkText = (botColor == ChessGame.RED) ? "红方思考中..." : "黑方思考中...";
+            statusText = thinkText;
             if (listener != null) listener.onStatusChanged(statusText);
             isBotThinking = true;
             invalidate();
 
-            int delay = 300 + random.nextInt(900); // 300-1200ms
+            int delay = 300 + random.nextInt(900);
             handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    botMove();
-                }
+                @Override public void run() { botMove(); }
             }, delay);
         }
 
@@ -499,38 +592,55 @@ public class BoardView extends View {
         }
     }
 
+    // 动画: 每帧更新
+    private void animTick() {
+        if (animState == ANIM_MOVING) {
+            animStep++;
+            invalidate();
+            if (animStep < ANIM_STEPS) {
+                handler.postDelayed(animRunnable, ANIM_STEP_MS);
+            } else {
+                // 动画结束 → 执行走法
+                finishAnimMove();
+            }
+        }
+    }
+
+    private void finishAnimMove() {
+        ChessGame.Move m = pendingAnimMove;
+        animState = ANIM_NONE;
+        animScale = 1.0f;
+        pendingAnimMove = null;
+        isBotThinking = false;
+        executeMove(m);
+    }
+
     private void botMove() {
+        if (bot == null) return;
         ChessGame.Move move = bot.findBestMove();
         if (move == null) {
-            // Bot 无合法走法——被将死，玩家胜
             gameOver = true;
             isBotThinking = false;
-            statusText = "红方胜!";
+            statusText = (myColor == ChessGame.RED) ? "红方胜!" : "黑方胜!";
             if (listener != null) {
                 listener.onStatusChanged(statusText);
                 listener.onGameOver(statusText);
             }
+            bot.endGame(true);
             showToast(statusText);
             invalidate();
             return;
         }
-        game.makeMove(move);
-        isBotThinking = false;
-        invalidate();
-
-        if (game.isGameOver()) {
-            gameOver = true;
-            String result = game.getCurrentPlayer() == ChessGame.RED ? "黑方胜!" : "红方胜!";
-            statusText = result;
-            if (listener != null) {
-                listener.onStatusChanged(statusText);
-                listener.onGameOver(result);
-            }
-            showToast(result);
-        } else {
-            statusText = "红方走棋";
-            if (listener != null) listener.onStatusChanged(statusText);
-        }
+        // Bot走子动画
+        animSrcR = move.fromRow;
+        animSrcC = move.fromCol;
+        animDstR = move.toRow;
+        animDstC = move.toCol;
+        pendingAnimMove = move;
+        animState = ANIM_MOVING;
+        animScale = 1.20f;
+        animStep = 0;
+        animTick();
     }
 
     private void showToast(String msg) {

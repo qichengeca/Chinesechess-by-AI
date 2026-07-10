@@ -37,6 +37,7 @@ public class ChessGame {
     private int[][] board;
     private int currentPlayer;
     private Move lastMove;
+    private boolean kingCaptured = false; // 将/帅被吃了
 
     public ChessGame() {
         board = new int[ROWS][COLS];
@@ -61,6 +62,7 @@ public class ChessGame {
 
         currentPlayer = RED;
         lastMove = null;
+        kingCaptured = false;
     }
 
     // ============ 基本访问 ============
@@ -114,14 +116,7 @@ public class ChessGame {
             case PAWN:     addPawnMoves(moves, row, col, color); break;
         }
 
-        // 过滤掉会导致自己被将的走法
-        List<Move> legalMoves = new ArrayList<>();
-        for (Move m : moves) {
-            if (isMoveSafe(m)) {
-                legalMoves.add(m);
-            }
-        }
-        return legalMoves;
+        return moves; // 自由下棋 - 不过滤会导致被将的走法
     }
 
     /** 获取当前玩家所有合法走法 */
@@ -147,6 +142,10 @@ public class ChessGame {
         board[move.toRow][move.toCol] = board[move.fromRow][move.fromCol];
         board[move.fromRow][move.fromCol] = EMPTY;
         lastMove = move;
+        // 检测吃将
+        if (Math.abs(move.captured) == KING) {
+            kingCaptured = true;
+        }
         currentPlayer = -currentPlayer;
     }
 
@@ -155,6 +154,7 @@ public class ChessGame {
         board[move.fromRow][move.fromCol] = board[move.toRow][move.toCol];
         board[move.toRow][move.toCol] = move.captured;
         currentPlayer = -currentPlayer;
+        kingCaptured = false; // AI搜索复原，防止污染游戏状态
     }
 
     // ============ 胜负判断 ============
@@ -171,7 +171,12 @@ public class ChessGame {
 
     /** 判断游戏是否结束 */
     public boolean isGameOver() {
-        return isCheckmate();
+        return kingCaptured || isCheckmate();
+    }
+
+    /** 是否吃将结束 */
+    public boolean isKingCaptured() {
+        return kingCaptured;
     }
 
     // ============ 内部辅助 ============
@@ -468,6 +473,7 @@ public class ChessGame {
             System.arraycopy(savedBoard[i], 0, board[i], 0, COLS);
         }
         currentPlayer = savedPlayer;
+        kingCaptured = false;
     }
 
     // ============ Move 类 ============

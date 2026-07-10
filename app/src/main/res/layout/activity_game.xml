@@ -47,6 +47,18 @@
             android:textColor="#FFE0B2"
             android:textSize="13sp"/>
 
+        <TextView
+            android:id="@+id/btn_swap_side"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="🏳️"
+            android:textSize="18sp"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            android:layout_marginLeft="4dp"/>
+
     </LinearLayout>
 
     <!-- 棋盘区域 -->
@@ -60,6 +72,22 @@
             android:id="@+id/board_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/btn_rematch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|top"
+            android:layout_marginTop="12dp"
+            android:layout_marginRight="16dp"
+            android:text="再来一局"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_rematch_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"/>
 
     </FrameLayout>
 

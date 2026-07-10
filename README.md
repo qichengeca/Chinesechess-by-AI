@@ -1,7 +1,7 @@
-# Chinesechess-for-AI
+# Chinesechess-by-AI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/badge/Release-v1.0.0-brightgreen)](https://github.com/qichengeca/Chinesechess-by-AI/releases/tag/v1.0.0)
+[![Release](https://img.shields.io/badge/Release-v1.0.0-brightgreen)](https://github.com/qichengeca/Chinesechess-by-AI/releases/tag/app)
 [![Platform](https://img.shields.io/badge/Platform-Android-green)](https://developer.android.com/)
 
 > 一款由 AI 辅助生成的中国象棋对弈软件，开源供开发者参考学习。
@@ -10,7 +10,7 @@
 
 ## 项目简介
 
-**Chinesechess-for-AI** 是一款基于 Android 平台的中国象棋双人对战游戏。  
+**Chinesechess-by-AI** 是一款基于 Android 平台的中国象棋双人对战游戏。  
 本项目代码由 AI 辅助生成，旨在为棋类游戏开发者提供一套**干净、可扩展、可直接运行**的参考实现。
 
 无论你是想学习 Android 游戏开发、研究棋盘逻辑，还是想在基础上二次开发（如接入 AI 引擎、实现网络对战），这个项目都能给你一个良好的起点。
@@ -29,7 +29,7 @@
 
 直接安装即可体验：
 
-**[下载 v1.0.0 APK](https://github.com/qichengeca/Chinesechess-by-AI/releases/download/v1.0.0)**
+**[下载 v1.0.0 APK](https://github.com/qichengeca/Chinesechess-by-AI/releases/tag/app)**
 
 > 你也可在 [Releases 页面](https://github.com/qichengeca/Chinesechess-by-AI/releases) 找到所有历史版本及源码压缩包。
 

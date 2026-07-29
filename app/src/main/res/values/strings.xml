@@ -1,4 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">象棋</string>
-    
+    <string name="single_player">单人游戏</string>
+    <string name="two_player">单机双人</string>
+    <string name="lan_battle">局域网对战</string>
+    <string name="difficulty">选择难度</string>
+    <string name="easy">简单 (2层)</string>
+    <string name="normal">普通 (3层)</string>
+    <string name="hard">困难 (4层)</string>
+    <string name="hell">地狱 (5层)</string>
+    <string name="warning">警告</string>
+    <string name="warning_msg">此难度参数极高，除非你有一台强劲的手机，否则不建议选择此难度。</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="back">返回</string>
+    <string name="create_room">创建房间</string>
+    <string name="rematch">再来一局</string>
+    <string name="surrender">认输</string>
+    <string name="surrender_confirm">确定认输吗？</string>
+    <string name="red_move">红方走棋</string>
+    <string name="black_move">黑方走棋</string>
+    <string name="red_thinking">红方思考中…</string>
+    <string name="black_thinking">黑方思考中…</string>
+    <string name="red_win">红方胜!</string>
+    <string name="black_win">黑方胜!</string>
+    <string name="red_capture_king">红方吃将胜!</string>
+    <string name="black_capture_king">黑方吃将胜!</string>
+    <string name="red_surrender">红方认输</string>
+    <string name="black_surrender">黑方认输</string>
+    <string name="choose_side">选择棋子颜色</string>
+    <string name="red_side">红 棋 (先手)</string>
+    <string name="black_side">黑 棋 (后手)</string>
+    <string name="scanning">正在扫描房间…</string>
+    <string name="no_room">暂无可用房间</string>
+    <string name="replay">回看</string>
+    <string name="export_mp4">导出MP4</string>
+    <string name="language">语言</string>
 </resources>

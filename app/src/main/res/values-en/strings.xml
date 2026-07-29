@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Chess</string>
+    <string name="single_player">Single Player</string>
+    <string name="two_player">Two Players</string>
+    <string name="lan_battle">LAN Battle</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="easy">Easy (2-ply)</string>
+    <string name="normal">Normal (3-ply)</string>
+    <string name="hard">Hard (4-ply)</string>
+    <string name="hell">Hell (5-ply)</string>
+    <string name="warning">Warning</string>
+    <string name="warning_msg">This difficulty requires a powerful phone. Not recommended otherwise.</string>
+    <string name="confirm">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+    <string name="create_room">Create Room</string>
+    <string name="rematch">Rematch</string>
+    <string name="surrender">Surrender</string>
+    <string name="surrender_confirm">Are you sure you want to surrender?</string>
+    <string name="red_move">Red\'s turn</string>
+    <string name="black_move">Black\'s turn</string>
+    <string name="red_thinking">Red thinking…</string>
+    <string name="black_thinking">Black thinking…</string>
+    <string name="red_win">Red wins!</string>
+    <string name="black_win">Black wins!</string>
+    <string name="red_capture_king">Red captured the King!</string>
+    <string name="black_capture_king">Black captured the King!</string>
+    <string name="red_surrender">Red surrenders</string>
+    <string name="black_surrender">Black surrenders</string>
+    <string name="choose_side">Choose Side</string>
+    <string name="red_side">Red (First)</string>
+    <string name="black_side">Black (Second)</string>
+    <string name="scanning">Scanning…</string>
+    <string name="no_room">No rooms available</string>
+    <string name="replay">Replay</string>
+    <string name="export_mp4">Export MP4</string>
+    <string name="language">Language</string>
+</resources>

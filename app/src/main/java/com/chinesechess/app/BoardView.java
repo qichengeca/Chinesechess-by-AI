@@ -55,6 +55,10 @@ public class BoardView extends View {
     private boolean isBotThinking = false;
     private String statusText = "红方走棋";
 
+    // 计时
+    private long gameStartTime = 0;
+    private long gameElapsed = 0;
+
     // 多人模式
     private boolean isLanMode = false;
     private boolean isHost = false;
@@ -117,14 +121,39 @@ public class BoardView extends View {
         validMoves = null;
         gameOver = false;
         isBotThinking = false;
+        gameStartTime = System.currentTimeMillis();
+        gameElapsed = 0;
         statusText = (myColor == ChessGame.RED) ? "红方走棋" : "黑方走棋";
         if (listener != null) listener.onStatusChanged(statusText);
+        invalidate();
+    }
+
+    /** 获取已用时间(秒) */
+    public int getElapsedSeconds() {
+        if (gameOver) return (int)(gameElapsed / 1000);
+        return (int)((System.currentTimeMillis() - gameStartTime) / 1000);
+    }
+
+    /** 认输 */
+    public void surrender() {
+        if (gameOver) return;
+        gameOver = true;
+        gameElapsed = System.currentTimeMillis() - gameStartTime;
+        String loser = (myColor == ChessGame.RED) ? "红方认输" : "黑方认输";
+        String winner = (myColor == ChessGame.RED) ? "黑方胜!" : "红方胜!";
+        statusText = winner;
+        if (listener != null) {
+            listener.onStatusChanged(winner);
+            listener.onGameOver(winner);
+        }
+        showToast(loser + "，" + winner);
         invalidate();
     }
 
     /** 再来一局 */
     public void restartGame() {
         newGame();
+        handler.removeCallbacksAndMessages(null);
         // 单人模式: Bot先手则立即走
         if (!isLanMode && !isLocalPvP && bot != null && myColor == ChessGame.BLACK) {
             isBotThinking = true;
@@ -147,6 +176,8 @@ public class BoardView extends View {
         this.isLocalPvP = false;
         this.myColor = playerColor;
         int botColor = -playerColor;
+        // 清除所有待执行的旧回调，防止换边后双Bot
+        handler.removeCallbacksAndMessages(null);
         bot = new ChessBot(game, botColor);
         bot.setSearchDepth(botDepth);
         float nf;
@@ -179,6 +210,7 @@ public class BoardView extends View {
 
     /** 初始化本地双人对战模式 */
     public void initLocalPvP() {
+        handler.removeCallbacksAndMessages(null);
         this.isLocalPvP = true;
         this.isLanMode = false;
         this.bot = null; // 双人模式不用Bot
@@ -551,6 +583,7 @@ public class BoardView extends View {
         // 检查游戏是否结束
         if (game.isGameOver()) {
             gameOver = true;
+            gameElapsed = System.currentTimeMillis() - gameStartTime;
             String result;
             if (game.isKingCaptured()) {
                 result = game.getCurrentPlayer() == ChessGame.RED ? "黑方吃将胜!" : "红方吃将胜!";

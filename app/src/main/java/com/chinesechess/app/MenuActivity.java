@@ -10,6 +10,7 @@ import android.os.Looper;
 import android.view.View;
 import android.view.Window;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -65,33 +66,34 @@ public class MenuActivity extends AppCompatActivity {
     private void showDifficultyDialog() {
         final Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_difficulty);
+        dialog.setContentView(R.layout.dialog_slider);
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-        final int[] depths = {2, 3, 4, 5};
-        final String[] titles = {"象棋(简单)", "象棋(普通)", "象棋(困难)", "象棋(地狱)"};
-        final int[] btnIds = {R.id.dlg_btn_easy, R.id.dlg_btn_normal, R.id.dlg_btn_hard, R.id.dlg_btn_hell};
+        final TextView label = (TextView) dialog.findViewById(R.id.slider_label);
+        final SeekBar seek = (SeekBar) dialog.findViewById(R.id.seek_difficulty);
+        final String[] names = {"简单 (2层)", "普通 (3层)", "困难 (4层)", "地狱 (5层)"};
 
-        // X 关闭按钮
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                label.setText(names[p]);
+            }
+            @Override public void onStartTrackingTouch(SeekBar sb) {}
+            @Override public void onStopTrackingTouch(SeekBar sb) {}
+        });
+
         dialog.findViewById(R.id.dialog_btn_close).setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { dialog.dismiss(); }
         });
 
-        for (int i = 0; i < btnIds.length; i++) {
-            final int idx = i;
-            dialog.findViewById(btnIds[i]).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (depths[idx] == 5) {
-                        dialog.dismiss();
-                        showHellWarning();
-                    } else {
-                        dialog.dismiss();
-                        showSideDialog(depths[idx], titles[idx]);
-                    }
-                }
-            });
-        }
+        dialog.findViewById(R.id.slider_btn_confirm).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                int idx = seek.getProgress();
+                int depth = idx + 2;
+                dialog.dismiss();
+                if (depth == 5) showHellWarning();
+                else showSideDialog(depth, "象棋(" + names[idx].replace(" (", "").replace(")", "") + ")");
+            }
+        });
 
         dialog.show();
     }

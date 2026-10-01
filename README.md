@@ -41,7 +41,7 @@
 但必须遵守以下署名条款：
 
 在任何衍生作品（包括但不限于修改版、商业版）中，必须在软件的“关于”页面或文档中明确注明：
-“本软件基于 Chinesechess-for-AI 开发，原作者：qichengeca”。
+“本软件基于 Chinesechess-by-AI 开发，原作者：qichengeca”。
 
 完整的许可证文本请见 LICENSE 文件。
 
